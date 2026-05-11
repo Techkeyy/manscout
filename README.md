@@ -1,32 +1,37 @@
-# Mantle Copy-Trade Agent
+# 🦅 ManScout
 
-**The Turing Test Hackathon 2026 — AI Awakening Phase**
+**Autonomous AI Copy-Trading Agent for Mantle**
 
-An autonomous AI agent that scans Mantle wallets, identifies profitable traders using LLM reasoning, and autonomously copy-trades on Mantle testnet.
+ManScout scans Mantle mainnet wallets, profiles traders using LLM reasoning (DeepSeek), and autonomously copies profitable trades. No human in the loop — you set the budget and risk parameters once, the agent runs independently.
+
+> Built for the **Mantle Turing Test Hackathon 2026**
+
+---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    AUTONOMOUS AGENT LOOP                   │
-│                                                            │
-│  🔍 SCAN           🧠 DECIDE            ⚡ EXECUTE        │
-│  ─────────         ─────────            ──────────        │
-│  RPC pulls         LLM analyzes:        Mirrors trade     │
-│  wallet data       "Wallet 0x7a         on Mantle         │
-│  from Mantle        has 78% win          testnet DEX      │
-│  mainnet            rate. Copy."                           │
-│                                                            │
-│              ↓              ↓                ↓             │
-│         Mantle RPC     DeepSeek API     Testnet DEX        │
-│                                                            │
-│  📋 LOG — every decision recorded on-chain                 │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    ManScout Agent                        │
+│                                                         │
+│  Scanner ──→ Analyzer (LLM) ──→ Decider ──→ Executor   │
+│     │                                        │          │
+│     │     ┌──────────────────────┐           │          │
+│     └────→│   Discord Notifier   │←──────────┘          │
+│           │  (notifications)     │                      │
+│           └──────────────────────┘                      │
+│                                                         │
+│  Dashboard (Next.js) ←── API ←── Logs/State             │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+- **Agent** — Python/FastAPI. Fully autonomous loop: scan → analyze → decide → execute → log. Runs on Mantle mainnet.
+- **Discord** — Passive observation channel. Agent pushes scan reports and trade decisions. No commands, no control.
+- **Dashboard** — Next.js web UI for live monitoring. Connects to the agent API locally.
 
-### Backend (Python)
+---
+
+## Quick Start
 
 ```bash
 cd agent
@@ -34,51 +39,45 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Test connectivity
-python test_feasibility.py
+# Required
+export DEEPSEEK_API_KEY="your-key"
+# Optional — Discord notifications
+export DISCORD_BOT_TOKEN="your-token"
+export DISCORD_CHANNEL_ID="123456789"
 
-# Start API server
 python api.py
+# → 🦅 ManScout starting — Mantle mainnet...
+# → Agent running at http://localhost:8000
 ```
 
-### Frontend (Next.js)
-
+Then start the dashboard:
 ```bash
-npm install
-npm run dev
+cd ..
+npm install && npm run dev
+# → http://localhost:3000
 ```
 
-Open http://localhost:3000
+---
 
-## Tech Stack
+## API Endpoints
 
-- **Mantle Network** — EVM L2, chain ID 5000 (mainnet) / 5003 (testnet)
-- **DeepSeek** — LLM for wallet analysis and trade decisions
-- **FastAPI** — Python backend for the agent loop
-- **Next.js 16** — Frontend dashboard with live Orb animation
-- **Canvas API** — Animated background orbs
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/status` | GET | Agent state, config, stats |
+| `/api/wallets` | GET | Scanned wallets with LLM analysis |
+| `/api/logs` | GET | Recent copy/pass decisions |
+| `/api/scan` | POST | Trigger wallet scan |
+| `/api/start-agent` | POST | Start autonomous loop |
+| `/api/stop-agent` | POST | Stop autonomous loop |
+| `/api/config` | GET/POST | View/update budget, risk, limits |
 
-## Feasibility Results
+---
 
-| Test | Status |
-|------|--------|
-| Mantle Mainnet RPC | ✅ Working (block 95M+) |
-| Mantle Testnet RPC | ✅ Working (chain ID 5003) |
-| Gas Price | ~50 gwei |
-| Wallet Scanning | ✅ Functional |
-| DEX Execution | Simulated (testnet) |
+## Hackathon
 
-## Hackathon Fit
-
-**Tracks:** AI Trading & Strategy (Track 1) / AI Alpha & Data (Track 2)
-
-**Three Defining Features:**
-1. **On-chain benchmarking** — every agent decision logged
-2. **ERC-8004 agent identity** — assignable to agent wallet
-3. **Global live-streaming** — dashboard shows agent thinking live
-
-## Prize Eligibility
-
-- Track First Prize: $8,500
-- Finalist & Deployment: $1,000 (top 20 overall)
-- Community Voting: up to $8,500
+- **Event:** Mantle Turing Test Hackathon 2026
+- **Prize pool:** $100,000
+- **Deadline:** June 15, 2026
+- **Chain:** Mantle mainnet
+- **LLM:** DeepSeek
+- **DEX:** Merchant Moe / Agni Finance

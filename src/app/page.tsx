@@ -50,7 +50,8 @@ interface AgentStatus {
   open_positions: number;
 }
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const USE_CACHE = !API_BASE.includes("localhost"); // On Vercel, fall back to cached data
 
 export default function Home() {
   const [status, setStatus] = useState<AgentStatus | null>(null);
