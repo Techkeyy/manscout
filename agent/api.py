@@ -25,7 +25,6 @@ from analyzer import score_wallets
 from decider import decide
 from executor import execute_copy_trade
 from logger import log_decision, get_logs, get_agent_stats
-from notifier import ManScoutNotifier
 
 # ─── Agent State ────────────────────────────────────────────────
 
@@ -44,35 +43,15 @@ agent_wallet = os.getenv("AGENT_WALLET", "0xAGENT0000000000000000000000000000000
 tracked_wallets = []  # top wallets being tracked
 agent_positions = []  # open copy-trade positions
 
-# Discord notifier (optional — only if tokens are set)
-notifier: ManScoutNotifier | None = None
-discord_channel_id = int(os.getenv("DISCORD_CHANNEL_ID", "0"))
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown."""
-    global notifier
-
-    # Init Discord notifier (optional)
-    discord_token = os.getenv("DISCORD_BOT_TOKEN", "")
-    if discord_token and discord_channel_id:
-        try:
-            notifier = ManScoutNotifier(discord_token, discord_channel_id)
-            await notifier.start()
-            await notifier.wait_ready(timeout=15)
-            print("🦅 Discord notifier connected")
-        except Exception as e:
-            print(f"⚠️ Discord notifier unavailable: {e}")
-            notifier = None
-
     print("🦅 ManScout starting — Mantle mainnet...")
     yield
     global agent_running
     if agent_running:
         agent_running = False
-    if notifier:
-        await notifier.close()
     print("👋 Agent shutting down")
 
 
@@ -178,13 +157,6 @@ async def agent_loop():
             scored = score_wallets(wallets)
             global tracked_wallets
             tracked_wallets = scored[:10]
-
-            # PUSH scan report to Discord
-            if notifier:
-                try:
-                    await notifier.send_scan_report(len(wallets), tracked_wallets)
-                except Exception:
-                    pass
             
             # 2. MONITOR tracked wallets for new trades
             current_positions_count = len(agent_positions)
@@ -225,18 +197,6 @@ async def agent_loop():
                             position_size=decision.get("position_size", 0),
                             expected_outcome=decision.get("expected_outcome", ""),
                         )
-
-                        # PUSH decision to Discord
-                        if notifier:
-                            try:
-                                await notifier.send_decision(
-                                    action=action,
-                                    wallet=wallet["address"],
-                                    decision=decision,
-                                    tx_hash=result.get("tx_hash"),
-                                )
-                            except Exception:
-                                pass
                         
                         if decision.get("should_copy") == "yes":
                             agent_positions.append({
